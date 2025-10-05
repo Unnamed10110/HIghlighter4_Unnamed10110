@@ -1,0 +1,10 @@
+<Window x:Class="Highlighter4.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Screen Highlighter" 
+        Width="0" 
+        Height="0" 
+        WindowState="Minimized"
+        ShowInTaskbar="False"
+        Visibility="Hidden">
+</Window>
