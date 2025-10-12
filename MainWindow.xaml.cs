@@ -415,13 +415,23 @@ namespace Highlighter4
         {
             try
             {
-                // Use system warning icon (yellow exclamation mark)
-                System.Diagnostics.Debug.WriteLine("Using system warning icon");
-                return SystemIcons.Warning;
+                // Try to load Lambda.ico
+                string iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Lambda.ico");
+                
+                if (System.IO.File.Exists(iconPath))
+                {
+                    System.Diagnostics.Debug.WriteLine($"Loading Lambda.ico from: {iconPath}");
+                    return new Icon(iconPath, 16, 16);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"Lambda.ico not found at: {iconPath}");
+                    return SystemIcons.Application;
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Could not load system icon: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Could not load Lambda.ico: {ex.Message}");
                 
                 // Fallback: use application icon
                 return SystemIcons.Application;

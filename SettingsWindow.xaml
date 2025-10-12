@@ -10,7 +10,8 @@
         WindowStyle="SingleBorderWindow"
         ResizeMode="CanResize"
         MinWidth="800"
-        MinHeight="500">
+        MinHeight="500"
+        Icon="Lambda.ico">
     
     <Window.Resources>
         <!-- Pure OLED Black Theme -->

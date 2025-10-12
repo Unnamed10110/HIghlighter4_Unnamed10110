@@ -8,7 +8,8 @@
         Background="#FF0D1117"
         Foreground="White"
         WindowStyle="SingleBorderWindow"
-        ResizeMode="CanResize">
+        ResizeMode="CanResize"
+        Icon="Lambda.ico">
     
     <Window.Resources>
         <!-- Tema OLED Oscuro -->

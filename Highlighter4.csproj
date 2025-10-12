@@ -18,11 +18,18 @@
     <SupportedOSPlatformVersion>6.1</SupportedOSPlatformVersion>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <NoWarn>$(NoWarn);CA1416;CS8618;CS8625;CS8622;CS8602;CS8600;CS8603;CS8604;CS0169;CS0414;NU1701</NoWarn>
+    <ApplicationIcon>Lambda.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="10.0.0-rc.1.25451.107" />
     <PackageReference Include="System.Windows.Forms" Version="4.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Lambda.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
