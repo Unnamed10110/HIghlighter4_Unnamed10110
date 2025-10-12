@@ -11,7 +11,7 @@ Highlighter4 is a comprehensive screen capture and image editing application tha
 ## ✨ Key Features
 
 ### 📸 **Multiple Capture Modes**
-- **Quick Region Capture** (`Ctrl+Numpad .`) - Instant capture with automatic editor
+- **GIF Recording** (`Ctrl+Numpad .`) - Record screen region as animated GIF (30 FPS)
 - **Overlay Capture** (`Alt+X` → `C`) - Highlight mode with capture option
 - **Scroll Capture** (`Ctrl+Numpad 0`) - Capture long scrolling content automatically
 - **Automatic Save** - All captures saved to organized folders by date
@@ -46,13 +46,26 @@ Highlighter4 is a comprehensive screen capture and image editing application tha
 - **Modern UI** - OLED dark theme with sidebar navigation
 - **7 Categories** - General, Hotkeys, Capture, Editor, Notifications, Advanced, About
 - **Easy Access** - Right-click tray icon → Settings
-- **Customizable** - Configure all aspects of the application
+- **Persistent Settings** - JSON-based configuration saved to AppData
+- **FFmpeg Integration** - Built-in FFmpeg installer and verifier
+- **Fully Functional** - All settings saved and applied instantly
 
 ### 👻 **Background Operation**
 - **System Tray Icon** - Yellow warning icon (⚠️)
 - **Global Hotkeys** - Work from any application
-- **Auto-start** - Optionally start with Windows
+- **Auto-start** - Automatic Windows startup with registry integration
 - **Invisible Mode** - Runs silently in the background
+- **FFmpeg Auto-check** - Verifies FFmpeg installation on startup
+
+### 🎬 **FFmpeg Integration & GIF Recording**
+- **Automatic Detection** - Checks for FFmpeg on first run
+- **One-Click Installation** - Installs via winget, chocolatey, or scoop
+- **GIF Recording** - Record screen region as 30 FPS animated GIF
+- **Visual Border** - White 1px animated border during recording
+- **Timer Overlay** - Real-time recording timer with milliseconds (mm:ss.cs)
+- **Progress Indicator** - Tray icon shows rendering progress (5% → 100%)
+- **Settings Integration** - Install/reinstall/verify from Advanced Settings
+- **Visual Status** - Green ✅ or red ❌ indicator in settings
 
 ## 🚀 Quick Start
 
@@ -63,10 +76,12 @@ Highlighter4 is a comprehensive screen capture and image editing application tha
 4. Use hotkeys to capture and edit
 
 ### Basic Usage
-1. **Quick Capture**: Press `Ctrl+Numpad .` → Select region → Editor opens
-2. **Edit**: Use F1-F7 tools to annotate
-3. **Save**: Press `Enter` to save with notification
-4. **Open**: Click notification to view in default image viewer
+1. **GIF Recording**: Press `Ctrl+Numpad .` → Select region → Press again to stop → GIF saved
+2. **Scroll Capture**: Press `Ctrl+Numpad 0` → Select region → Auto-scroll capture
+3. **Overlay Capture**: Press `Alt+X` → Press `C` → Select region → Editor opens
+4. **Edit**: Use F1-F7 tools to annotate
+5. **Save**: Press `Enter` to save with notification
+6. **Open**: Click notification to view in default viewer
 
 ## ⌨️ Keyboard Shortcuts
 
@@ -74,7 +89,7 @@ Highlighter4 is a comprehensive screen capture and image editing application tha
 - `Alt+X` - Show highlight overlay
 - `Shift+Alt+X` - Toggle capture mode (when overlay active)
 - `C` - Capture region (when overlay is active)
-- `Ctrl+Numpad .` - Quick region capture + editor
+- `Ctrl+Numpad .` - GIF recording (press once to start, again to stop)
 - `Ctrl+Numpad 0` - Scroll capture + editor
 
 ### Editor Shortcuts
@@ -176,11 +191,16 @@ The built-in image editor provides professional annotation tools:
 
 ### Capture Modes
 
-#### Quick Capture (`Ctrl+Numpad .`)
-- Fastest way to capture and edit
-- Direct to editor after selection
-- No intermediate steps
-- Perfect for quick annotations
+#### GIF Recording (`Ctrl+Numpad .`)
+- **Start**: Press `Ctrl+Numpad .`, select region, recording begins
+- **Visual Feedback**: White 1px animated border around region
+- **Timer**: Real-time recording timer with milliseconds (mm:ss.cs)
+- **Stop**: Press `Ctrl+Numpad .` again to stop recording
+- **Rendering**: Tray icon shows progress (5% → 100%)
+- **30 FPS**: High-quality animated GIF with optimized palette
+- **Auto-save**: Saved to `Downloads/Highlighter4/dd-MM-yyyy/`
+- **Notification**: Thumbnail notification when complete
+- **Perfect for**: Tutorials, bug reports, demos, animations
 
 #### Overlay Capture (`Alt+X` → `C`)
 - Show highlight overlay first
@@ -190,6 +210,7 @@ The built-in image editor provides professional annotation tools:
 
 #### Scroll Capture (`Ctrl+Numpad 0`)
 - Automatically captures scrolling content
+- Visual border shows capture region (animated green 1px)
 - Detects scroll position
 - Combines multiple screenshots
 - Perfect for long web pages or documents
@@ -203,44 +224,49 @@ The built-in image editor provides professional annotation tools:
 - **Non-intrusive**: Bottom-right corner placement
 
 ### Settings Panel
-Access via right-click tray icon → Settings
+Access via right-click tray icon → Settings (⚙️)
+
+All settings are **persistent** - saved to `%AppData%/Highlighter4/settings.json`
 
 #### General Settings
-- Start with Windows
-- Show tray icon
-- Interface language (English/Español)
-- Default save folder
-- Date-based organization
+- ✅ Start with Windows (registry integration)
+- ✅ Show tray icon
+- ✅ Interface language (English/Español)
+- ✅ Default save folder (with Browse button)
+- ✅ Date-based organization toggle
 
 #### Hotkeys
 - View all global hotkeys
-- Customization (coming soon)
+- Keyboard shortcut reference
+- Customization (coming in future update)
 
 #### Capture Options
-- Auto-save captures
-- Copy to clipboard automatically
-- Open in editor after capture
-- Play sound on capture
-- Image format (PNG/JPEG/BMP)
+- ✅ Auto-save captures
+- ✅ Copy to clipboard automatically
+- ✅ Open in editor after capture
+- ✅ Play sound on capture
+- ✅ Image format (PNG/JPEG/BMP)
 
 #### Editor Options
-- Default drawing color
-- Default line thickness
-- Auto-focus behavior
-- Close after save
-- Show grid
+- Default drawing color (Red)
+- Default line thickness (3px)
+- ✅ Auto-focus behavior
+- ✅ Close after save
+- ✅ Show grid toggle
 
 #### Notifications
-- Show notifications on save
-- Show image thumbnail
-- Click to open functionality
-- Display duration
+- ✅ Show notifications on save
+- ✅ Show image thumbnail
+- ✅ Click to open functionality
+- ✅ Display duration (3/6/10 seconds)
 
 #### Advanced
-- Hardware acceleration
-- Cache settings
-- Debug logging
-- Reset all settings
+- ✅ Hardware acceleration
+- ✅ Cache settings
+- ✅ Debug logging
+- ✅ Show debug console
+- ✅ FFmpeg installation/verification
+- ✅ Reset all settings to default
 
 ## 📁 File Organization
 
@@ -257,10 +283,69 @@ Downloads/
 ```
 
 ### File Naming Convention
+- **GIF recordings**: `dd-MM-yyyy_HH-mm-ss.gif`
 - **Editor saves**: `dd-MM-yyyy_HH-mm-ss.png`
 - **Quick saves**: `dd-MM-yyyy.png`
-- **Format**: PNG (lossless compression)
+- **Format**: PNG (lossless) / GIF (30 FPS, optimized palette)
 - **Organization**: Automatic date-based folders
+
+## 🎬 FFmpeg Integration & GIF Recording
+
+### What is FFmpeg?
+FFmpeg is a powerful multimedia framework used for video recording, conversion, and streaming. Highlighter4 uses it for GIF recording and advanced video capture features.
+
+### GIF Recording Feature
+Record any region of your screen as a high-quality animated GIF at 30 FPS.
+
+#### How to Record a GIF
+1. Press `Ctrl+Numpad .` to start
+2. Select the region you want to record with your mouse
+3. Recording starts automatically with visual indicators:
+   - White 1px animated border around the region
+   - Timer overlay in bottom-left showing elapsed time (mm:ss.cs)
+4. Press `Ctrl+Numpad .` again to stop recording
+5. Tray icon shows rendering progress (5% → 100%)
+6. Notification appears when GIF is ready
+7. Click notification to open the GIF
+
+#### GIF Quality Settings
+- **Frame Rate**: 30 FPS (smooth playback)
+- **Palette**: Optimized 256-color palette with dithering
+- **Compression**: Bayer dithering (bayer_scale=5) for smooth gradients
+- **Scaling**: Lanczos algorithm for high-quality resizing
+- **Loop**: Infinite loop by default
+- **File Size**: Optimized for quality vs. size balance
+
+### Automatic Installation
+On first run, Highlighter4 automatically:
+1. Waits 3 seconds for UI to load
+2. Checks if FFmpeg is installed
+3. Prompts user if installation is needed
+4. Attempts installation via:
+   - **Winget** (Windows Package Manager) - Recommended
+   - **Chocolatey** - Popular package manager
+   - **Scoop** - Lightweight alternative
+5. Falls back to manual installation if all fail
+
+### Manual Installation from Settings
+1. Open Settings → Advanced
+2. Scroll to "FFmpeg" section
+3. Click "📥 Install FFmpeg" or "🔄 Reinstall FFmpeg"
+4. Wait for installation (may take a few minutes)
+5. Click "🔍 Verify Installation" to confirm
+
+### Status Indicator
+- **✅ Green**: FFmpeg installed and working
+- **❌ Red**: FFmpeg not found
+
+### Troubleshooting FFmpeg
+- If auto-install fails, try each method manually:
+  - Winget: `winget install Gyan.FFmpeg`
+  - Chocolatey: `choco install ffmpeg`
+  - Scoop: `scoop install ffmpeg`
+- Download manually: https://ffmpeg.org/download.html
+- Ensure FFmpeg is in your system PATH
+- Restart application after installation
 
 ## 🔧 Troubleshooting
 
@@ -288,6 +373,25 @@ Downloads/
 - Check Windows notification settings
 - Verify application has notification permissions
 - Try restarting the application
+
+### Settings Not Persisting
+- Check `%AppData%/Highlighter4/settings.json` exists
+- Verify folder has write permissions
+- Try resetting settings to defaults
+
+### Auto-start Not Working
+- Open Settings → General
+- Verify "Start with Windows" is checked
+- Check registry: `HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run`
+- Ensure executable path is correct
+
+### GIF Recording Issues
+- **FFmpeg not found**: Install FFmpeg from Settings → Advanced
+- **Recording doesn't start**: Verify FFmpeg is in system PATH
+- **No notification after recording**: Recording may have been too short (< 1 second)
+- **Poor quality**: Ensure 30 FPS is maintained during recording
+- **File too large**: Consider recording smaller regions or shorter duration
+- **Tray icon stuck on progress**: Restart the application
 
 ## 🎯 Use Cases
 
@@ -329,37 +433,45 @@ Downloads/
 ```
 Highlighter4/
 ├── App.cs                      # Application entry point
-├── Program.cs                  # Main program logic
-├── MainWindow.xaml(.cs)        # Main window and tray icon
+├── Program.cs                  # Main program logic and FFmpeg check
+├── MainWindow.xaml(.cs)        # Main window and tray icon (650+ lines)
 ├── HighlighterWindow.xaml(.cs) # Highlight overlay
-├── CaptureWindow.xaml(.cs)     # Region selection
+├── CaptureWindow.xaml(.cs)     # Region selection with visual border
 ├── ImageEditor.xaml(.cs)       # Image editor (2200+ lines)
-├── SettingsWindow.xaml(.cs)    # Settings panel
-├── NotificationManager.cs      # Custom notifications
-├── ScrollCaptureSingleFile.cs  # Scroll capture logic
+├── SettingsWindow.xaml(.cs)    # Settings panel (1200+ lines)
+├── AppSettings.cs              # Persistent settings manager
+├── FFmpegManager.cs            # FFmpeg detection and installation
+├── GifRecorder.cs              # GIF recording with FFmpeg (500+ lines)
+├── NotificationManager.cs      # Custom notifications with thumbnails
+├── ScrollCaptureSingleFile.cs  # Scroll capture with visual border
 ├── ScrollCaptureManager.cs     # Scroll capture manager
 ├── RegionSelectionForm.cs      # Region selection form
 ├── TrayIconManager.cs          # Tray icon management
-├── HotkeyManager.cs            # Hotkey registration
+├── HotkeyManager.cs            # Global hotkey registration
 ├── Screenshot.cs               # Screenshot utilities
 ├── NativeMethods.cs            # Windows API P/Invoke
-└── Highlighter4.csproj         # Project file
+├── Highlighter4.csproj         # Project file
+├── README.md                   # Documentation
+└── .gitignore                  # Git ignore file
 ```
 
 ### Key Technologies
 - **WPF**: Main UI framework
-- **Windows Forms**: Specific components
+- **Windows Forms**: Specific components and notifications
 - **P/Invoke**: Native Windows API integration
 - **System.Drawing**: Image manipulation
 - **XAML**: UI markup
 - **Async/Await**: Asynchronous operations
+- **System.Text.Json**: Settings serialization
+- **Process Management**: FFmpeg installation automation
 
 ### Design Patterns
 - **Event-driven architecture**: Loose coupling between components
 - **MVVM-inspired**: Separation of concerns
 - **Command pattern**: Undo/redo implementation
 - **Observer pattern**: Event subscriptions
-- **Factory pattern**: Icon creation
+- **Singleton pattern**: Settings and FFmpeg manager
+- **Strategy pattern**: Multiple installation methods (winget/choco/scoop)
 
 ## 🌟 Inspiration
 
@@ -392,31 +504,71 @@ This project is provided as-is for personal and educational use.
 ## 🔄 Version History
 
 ### Version 1.0.0 (Current)
-- ✅ Multiple capture modes (Quick, Overlay, Scroll)
+#### Core Features
+- ✅ GIF recording at 30 FPS with FFmpeg integration
+- ✅ Multiple capture modes (GIF, Overlay, Scroll)
 - ✅ Advanced image editor with F1-F7 tools
 - ✅ Speech balloons with draggable tails
-- ✅ Advanced crop tool with animated borders
-- ✅ Custom notifications with thumbnails
+- ✅ Advanced crop tool with animated borders and draggable handles
+- ✅ Visual borders during recording/capture (animated, 1px)
+
+#### User Interface
 - ✅ OLED dark theme throughout
-- ✅ Settings panel with sidebar navigation
-- ✅ Date-based file organization
+- ✅ Custom notifications with 300x300px thumbnails
 - ✅ Click-to-open notifications
+- ✅ Settings panel with sidebar navigation (7 categories)
 - ✅ Complete keyboard navigation
-- ✅ Undo/redo support
+
+#### Settings & Configuration
+- ✅ Persistent settings with JSON serialization
+- ✅ All settings functional and saved
+- ✅ Windows startup integration (registry)
+- ✅ Browse button for save folder selection
+- ✅ Reset to defaults functionality
+
+#### FFmpeg & GIF Recording
+- ✅ Automatic FFmpeg detection on startup
+- ✅ One-click installation (winget/chocolatey/scoop)
+- ✅ GIF recording at 30 FPS with optimized palette
+- ✅ Visual recording border (white 1px, animated)
+- ✅ Real-time timer overlay with milliseconds
+- ✅ Rendering progress indicator in tray icon (5% → 100%)
+- ✅ Settings panel integration with status indicator
+- ✅ Verify installation button
+- ✅ Manual fallback option
+
+#### File Management
+- ✅ Date-based file organization
 - ✅ Auto-save and clipboard integration
+- ✅ Timestamped filenames
+- ✅ No cache directory creation
+
+#### Advanced Features
+- ✅ Undo/redo support with complete history
+- ✅ Real-time blur effect
+- ✅ Draggable crop borders (1px animated)
+- ✅ Immediate crop/cancel buttons
+- ✅ Auto-focus and close-after-save options
 
 ## 🚀 Future Enhancements
 
-- [ ] Customizable hotkeys
+### Planned Features
+- [ ] Customizable hotkeys (UI ready, implementation pending)
 - [ ] Multiple monitor support
-- [ ] Video recording
-- [ ] GIF creation
+- [ ] MP4 video recording (FFmpeg ready)
+- [ ] Screen recording with audio
 - [ ] OCR text recognition
-- [ ] Cloud upload options
-- [ ] Custom color picker
+- [ ] Custom color picker for tools
 - [ ] Annotation templates
-- [ ] Batch processing
-- [ ] Plugin system
+
+### Advanced Features
+- [ ] Cloud upload options (optional)
+- [ ] Batch processing for multiple images
+- [ ] Plugin system for extensibility
+- [ ] Image filters and effects
+- [ ] Watermark support
+- [ ] Annotation presets
+- [ ] Keyboard shortcut customization UI
 
 ## 📞 Support
 

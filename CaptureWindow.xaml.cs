@@ -21,8 +21,12 @@ namespace Highlighter4
         private readonly DispatcherTimer _marchingAntsTimer;
         private double _dashOffset = 0;
         private HighlighterWindow? overlayWindow;
+        private bool _skipSaveAndNotification = false;
 
         public event EventHandler<Bitmap>? CaptureCompleted;
+        
+        // Property to expose the selected region
+        public Rectangle SelectedRegion { get; private set; }
 
         public CaptureWindow()
         {
@@ -42,6 +46,11 @@ namespace Highlighter4
         public CaptureWindow(HighlighterWindow overlayWindow) : this()
         {
             this.overlayWindow = overlayWindow;
+        }
+        
+        public CaptureWindow(bool skipSaveAndNotification) : this()
+        {
+            this._skipSaveAndNotification = skipSaveAndNotification;
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -128,17 +137,24 @@ namespace Highlighter4
                     return;
                 }
 
+                // Store the selected region
+                SelectedRegion = new Rectangle(left, top, width, height);
+
                 // Since the window is maximized, mouse coordinates are already screen coordinates
                 // Capture the screen region
                 var bitmap = CaptureScreenRegion(left, top, width, height);
                 
                 if (bitmap != null)
                 {
-                    // Copy to clipboard
-                    System.Windows.Clipboard.SetImage(ConvertBitmapToBitmapSource(bitmap));
-                    
-                    // Save to file
-                    SaveCaptureToFile(bitmap);
+                    // Only save and notify if not skipping (i.e., not for GIF recording)
+                    if (!_skipSaveAndNotification)
+                    {
+                        // Copy to clipboard
+                        System.Windows.Clipboard.SetImage(ConvertBitmapToBitmapSource(bitmap));
+                        
+                        // Save to file
+                        SaveCaptureToFile(bitmap);
+                    }
                     
                     // Hide the overlay window if it exists
                     if (overlayWindow != null)

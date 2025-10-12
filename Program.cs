@@ -10,6 +10,7 @@ namespace Highlighter4
         private static MainWindow mainWindow;
         private static ScrollCaptureSingleFile scrollCapture;
         private static NotificationManager notificationManager;
+        private static GifRecorder gifRecorder;
         
         // Método estático para notificaciones desde cualquier parte de la aplicación
         public static void NotifyImageSaved(string title, string message, System.Drawing.Bitmap bitmap)
@@ -39,6 +40,10 @@ namespace Highlighter4
                 scrollCapture.OnImageSaved += OnScrollCaptureImageSaved;
                 scrollCapture.OnImageReadyForEditor += OnScrollCaptureImageReadyForEditor;
                 
+                // Inicializar GifRecorder
+                gifRecorder = new GifRecorder();
+                gifRecorder.RenderingProgress += OnGifRenderingProgress;
+                gifRecorder.RecordingStopped += OnGifRecordingStopped;
 
                 // Crear y configurar la ventana principal
                 mainWindow = new MainWindow();
@@ -47,8 +52,17 @@ namespace Highlighter4
                 // Suscribirse a eventos de la ventana principal
                 mainWindow.ScrollCaptureRequested += OnScrollCaptureRequested;
                 mainWindow.RegionCaptureRequested += OnRegionCaptureRequested;
+                mainWindow.GifRecordingRequested += OnGifRecordingRequested;
                 mainWindow.HotkeyPressed += OnHotkeyPressed;
                 mainWindow.CaptureModeRequested += OnCaptureModeRequested;
+                
+                // Verificar FFmpeg en segundo plano (sin bloquear la UI)
+                System.Threading.Tasks.Task.Run(async () =>
+                {
+                    // Esperar un poco para que la UI termine de cargar
+                    await System.Threading.Tasks.Task.Delay(3000);
+                    await FFmpegManager.CheckAndInstallFFmpegAsync();
+                });
 
                 // Ejecutar la aplicación WPF
                 var app = new System.Windows.Application();
@@ -119,6 +133,51 @@ namespace Highlighter4
             catch (Exception ex)
             {
                 System.Windows.Forms.MessageBox.Show($"Error en Region Capture: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        
+        private static void OnGifRecordingRequested(object sender, EventArgs e)
+        {
+            try
+            {
+                // Si ya está grabando, detener
+                if (gifRecorder.IsRecording)
+                {
+                    System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        await gifRecorder.StopRecordingAsync();
+                    });
+                }
+                else
+                {
+                    // Crear ventana de selección de región (sin guardar ni notificar)
+                    var captureWindow = new CaptureWindow(skipSaveAndNotification: true);
+                    
+                    captureWindow.CaptureCompleted += (s, bitmap) =>
+                    {
+                        try
+                        {
+                            // Obtener las dimensiones y posición de la región seleccionada
+                            var region = captureWindow.SelectedRegion;
+                            
+                            // Iniciar grabación en la región seleccionada
+                            System.Threading.Tasks.Task.Run(async () =>
+                            {
+                                await gifRecorder.StartRecordingAsync(region);
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Windows.Forms.MessageBox.Show($"Error starting GIF recording: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    };
+                    
+                    captureWindow.ShowDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show($"Error en GIF Recording: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -203,6 +262,38 @@ namespace Highlighter4
             {
                 System.Diagnostics.Debug.WriteLine($"Error convirtiendo bitmap: {ex.Message}");
                 return null;
+            }
+        }
+        
+        private static void OnGifRenderingProgress(object sender, int progress)
+        {
+            try
+            {
+                // Update tray icon with progress
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    mainWindow?.UpdateTrayIconWithProgress(progress);
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error updating tray progress: {ex.Message}");
+            }
+        }
+        
+        private static void OnGifRecordingStopped(object sender, string filePath)
+        {
+            try
+            {
+                // Reset tray icon to normal
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    mainWindow?.ResetTrayIcon();
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error resetting tray icon: {ex.Message}");
             }
         }
     }

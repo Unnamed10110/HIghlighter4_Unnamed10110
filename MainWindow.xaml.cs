@@ -40,6 +40,7 @@ namespace Highlighter4
         public event EventHandler? CaptureModeRequested;
         public event EventHandler? ScrollCaptureRequested;
         public event EventHandler? RegionCaptureRequested;
+        public event EventHandler? GifRecordingRequested;
         
         public void TriggerCaptureModeWithOverlay(HighlighterWindow overlayWindow)
         {
@@ -229,7 +230,8 @@ namespace Highlighter4
             }
             else if (msg == WM_HOTKEY && wParam.ToInt32() == HOTKEY_REGION_CAPTURE_ID)
             {
-                RegionCaptureRequested?.Invoke(this, EventArgs.Empty);
+                // Trigger GIF recording (start/stop toggle)
+                GifRecordingRequested?.Invoke(this, EventArgs.Empty);
                 handled = true;
             }
             else if (msg == WM_TRAYICON)
@@ -250,7 +252,46 @@ namespace Highlighter4
 
         private void ShowContextMenu()
         {
+            // Make this window visible momentarily to host the ContextMenu
+            this.Show();
+            this.WindowState = WindowState.Normal;
+            this.ShowInTaskbar = false;
+            this.Opacity = 0; // Invisible but can host ContextMenu
+            this.Width = 1;
+            this.Height = 1;
+            this.Topmost = true; // Ensure it's on top
+            
+            // Position window near the cursor
+            var cursorPos = System.Windows.Forms.Cursor.Position;
+            this.Left = cursorPos.X;
+            this.Top = cursorPos.Y;
+            
+            // Activate the window to ensure it has focus
+            this.Activate();
+            this.Focus();
+            
             var contextMenu = new System.Windows.Controls.ContextMenu();
+            
+            // Close menu when it loses focus
+            contextMenu.StaysOpen = false;
+            contextMenu.PlacementTarget = this;
+            contextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
+            
+            // Close and hide window when menu closes
+            contextMenu.Closed += (s, e) => {
+                contextMenu.IsOpen = false;
+                this.Hide();
+            };
+            
+            // Close menu when Escape is pressed
+            contextMenu.PreviewKeyDown += (s, e) => {
+                if (e.Key == System.Windows.Input.Key.Escape)
+                {
+                    contextMenu.IsOpen = false;
+                    this.Hide();
+                    e.Handled = true;
+                }
+            };
             
             var highlightItem = new System.Windows.Controls.MenuItem();
             highlightItem.Header = "Show Highlight (Alt+X)";
@@ -425,9 +466,14 @@ namespace Highlighter4
                 {
                     if (key != null)
                     {
-                        string executablePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-                        key.SetValue(APP_NAME, executablePath);
-                        System.Diagnostics.Debug.WriteLine("Added to Windows startup");
+                        // Get the actual executable path, not the DLL
+                        string executablePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+                        
+                        // Wrap in quotes to handle paths with spaces
+                        string quotedPath = $"\"{executablePath}\"";
+                        
+                        key.SetValue(APP_NAME, quotedPath);
+                        System.Diagnostics.Debug.WriteLine($"Added to Windows startup: {quotedPath}");
                     }
                 }
             }
@@ -473,6 +519,107 @@ namespace Highlighter4
                 System.Diagnostics.Debug.WriteLine($"Error checking startup status: {ex.Message}");
             }
             return false;
+        }
+        
+        public void UpdateTrayIconWithProgress(int progress)
+        {
+            try
+            {
+                // Create icon with progress percentage
+                var icon = CreateProgressIcon(progress);
+                
+                if (icon != null && _trayIconVisible)
+                {
+                    var iconData = new NOTIFYICONDATA
+                    {
+                        cbSize = Marshal.SizeOf<NOTIFYICONDATA>(),
+                        hWnd = new System.Windows.Interop.WindowInteropHelper(this).Handle,
+                        uID = 1,
+                        uFlags = 0x00000002 | 0x00000010, // NIF_ICON | NIF_TIP
+                        hIcon = icon.Handle,
+                        szTip = $"Highlighter4 - Rendering GIF: {progress}%"
+                    };
+                    
+                    Shell_NotifyIcon(NIM_MODIFY, ref iconData);
+                    
+                    icon.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error updating tray icon with progress: {ex.Message}");
+            }
+        }
+        
+        public void ResetTrayIcon()
+        {
+            try
+            {
+                // Restore normal icon
+                var icon = CreateRedCircleIcon();
+                
+                if (icon != null && _trayIconVisible)
+                {
+                    var iconData = new NOTIFYICONDATA
+                    {
+                        cbSize = Marshal.SizeOf<NOTIFYICONDATA>(),
+                        hWnd = new System.Windows.Interop.WindowInteropHelper(this).Handle,
+                        uID = 1,
+                        uFlags = 0x00000002 | 0x00000010, // NIF_ICON | NIF_TIP
+                        hIcon = icon.Handle,
+                        szTip = "Highlighter4"
+                    };
+                    
+                    Shell_NotifyIcon(NIM_MODIFY, ref iconData);
+                    
+                    icon.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error resetting tray icon: {ex.Message}");
+            }
+        }
+        
+        private System.Drawing.Icon CreateProgressIcon(int progress)
+        {
+            try
+            {
+                // Create a 16x16 bitmap
+                var bitmap = new System.Drawing.Bitmap(16, 16);
+                using (var g = System.Drawing.Graphics.FromImage(bitmap))
+                {
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    g.Clear(System.Drawing.Color.Transparent);
+                    
+                    // Draw progress text (no circle)
+                    string progressText = progress.ToString();
+                    float fontSize = progress >= 100 ? 8.5f : (progressText.Length >= 2 ? 9f : 10f);
+                    using (var font = new System.Drawing.Font("Arial", fontSize, System.Drawing.FontStyle.Bold))
+                    {
+                        var textSize = g.MeasureString(progressText, font);
+                        var x = (16 - textSize.Width) / 2;
+                        var y = (16 - textSize.Height) / 2;
+                        
+                        // Draw text shadow for better contrast
+                        g.DrawString(progressText, font, System.Drawing.Brushes.Black, x + 1, y + 1);
+                        
+                        // Draw text
+                        g.DrawString(progressText, font, System.Drawing.Brushes.White, x, y);
+                    }
+                }
+                
+                // Convert to Icon
+                IntPtr hIcon = bitmap.GetHicon();
+                System.Drawing.Icon icon = System.Drawing.Icon.FromHandle(hIcon);
+                
+                return icon;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error creating progress icon: {ex.Message}");
+                return System.Drawing.SystemIcons.Warning;
+            }
         }
     }
 

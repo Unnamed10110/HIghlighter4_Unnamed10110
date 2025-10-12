@@ -5,19 +5,19 @@
         Height="600" 
         Width="900"
         WindowStartupLocation="CenterScreen"
-        Background="#FF0D1117"
-        Foreground="White"
+        Background="#FF000000"
+        Foreground="#FFFFFFFF"
         WindowStyle="SingleBorderWindow"
         ResizeMode="CanResize"
         MinWidth="800"
         MinHeight="500">
     
     <Window.Resources>
-        <!-- OLED Dark Theme -->
+        <!-- Pure OLED Black Theme -->
         <Style TargetType="Button">
-            <Setter Property="Background" Value="#FF21262D"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#FF30363D"/>
+            <Setter Property="Background" Value="#FF1A1A1A"/>
+            <Setter Property="Foreground" Value="#FFFFFFFF"/>
+            <Setter Property="BorderBrush" Value="#FF333333"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="12,6"/>
             <Setter Property="Margin" Value="5"/>
@@ -36,11 +36,12 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#FF30363D"/>
-                                <Setter Property="BorderBrush" Value="#FF58A6FF"/>
+                                <Setter Property="Background" Value="#FF2D2D2D"/>
+                                <Setter Property="BorderBrush" Value="#FF00FF44"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#FF1F6FEB"/>
+                                <Setter Property="Background" Value="#FF00FF44"/>
+                                <Setter Property="Foreground" Value="#FF000000"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -50,11 +51,12 @@
         
         <Style x:Key="SidebarButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#FF8B949E"/>
+            <Setter Property="Foreground" Value="#FFAAAAAA"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="20,15"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -68,8 +70,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#FF161B22"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Background" Value="#FF1A1A1A"/>
+                                <Setter Property="Foreground" Value="#FFFFFFFF"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -78,44 +80,136 @@
         </Style>
         
         <Style x:Key="ActiveSidebarButton" TargetType="Button" BasedOn="{StaticResource SidebarButton}">
-            <Setter Property="Background" Value="#FF161B22"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#FF58A6FF"/>
+            <Setter Property="Background" Value="#FF1A1A1A"/>
+            <Setter Property="Foreground" Value="#FFFFFFFF"/>
+            <Setter Property="BorderBrush" Value="#FF00FF44"/>
         </Style>
         
         <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="#FFFFFFFF"/>
             <Setter Property="FontSize" Value="13"/>
         </Style>
         
         <Style TargetType="CheckBox">
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="#FFFFFFFF"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Margin" Value="0,8"/>
         </Style>
         
         <Style TargetType="ComboBox">
-            <Setter Property="Background" Value="#FF21262D"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#FF30363D"/>
+            <Setter Property="Background" Value="#FF1A1A1A"/>
+            <Setter Property="Foreground" Value="#FFFFFFFF"/>
+            <Setter Property="BorderBrush" Value="#FF333333"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton Name="ToggleButton"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        Foreground="{TemplateBinding Foreground}"
+                                        Focusable="False"
+                                        IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                        ClickMode="Press">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="20"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter Grid.Column="0"
+                                                    Name="ContentSite"
+                                                    IsHitTestVisible="False"
+                                                    Content="{TemplateBinding SelectionBoxItem}"
+                                                    ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                    ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                    Margin="{TemplateBinding Padding}"
+                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="Left"/>
+                                    <Path Grid.Column="1"
+                                        Name="Arrow"
+                                        Fill="{TemplateBinding Foreground}"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Data="M 0 0 L 4 4 L 8 0 Z"/>
+                                </Grid>
+                            </ToggleButton>
+                            <Popup Name="Popup"
+                                 Placement="Bottom"
+                                 IsOpen="{TemplateBinding IsDropDownOpen}"
+                                 AllowsTransparency="True"
+                                 Focusable="False"
+                                 PopupAnimation="Slide">
+                                <Grid Name="DropDown"
+                                    SnapsToDevicePixels="True"
+                                    MinWidth="{TemplateBinding ActualWidth}"
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border Name="DropDownBorder"
+                                          Background="#FFFFFFFF"
+                                          BorderBrush="#FF333333"
+                                          BorderThickness="1">
+                                        <ScrollViewer Margin="2"
+                                                    SnapsToDevicePixels="True">
+                                            <StackPanel IsItemsHost="True"
+                                                      KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#FF000000"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderThickness="0"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter Property="Background" Value="#FF00FF44"/>
+                                <Setter Property="Foreground" Value="#FF000000"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#FFDDDDDD"/>
+                                <Setter Property="Foreground" Value="#FF000000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         
         <Style TargetType="TextBox">
-            <Setter Property="Background" Value="#FF21262D"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#FF30363D"/>
+            <Setter Property="Background" Value="#FF1A1A1A"/>
+            <Setter Property="Foreground" Value="#FFFFFFFF"/>
+            <Setter Property="BorderBrush" Value="#FF333333"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Padding" Value="8,5"/>
-            <Setter Property="CaretBrush" Value="White"/>
+            <Setter Property="CaretBrush" Value="#FFFFFFFF"/>
         </Style>
         
         <Style TargetType="GroupBox">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#FF30363D"/>
+            <Setter Property="Foreground" Value="#FFFFFFFF"/>
+            <Setter Property="BorderBrush" Value="#FF333333"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Margin" Value="0,10"/>
-            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
     </Window.Resources>
     
@@ -126,9 +220,9 @@
         </Grid.ColumnDefinitions>
         
         <!-- Left Sidebar -->
-        <Border Grid.Column="0" Background="#FF0D1117" BorderBrush="#FF30363D" BorderThickness="0,0,1,0">
+        <Border Grid.Column="0" Background="#FF000000" BorderBrush="#FF333333" BorderThickness="0,0,1,0">
             <StackPanel>
-                <TextBlock Text="⚙️ SETTINGS" FontSize="18" FontWeight="Bold" Margin="20,20,20,30" Foreground="#FF58A6FF"/>
+                <TextBlock Text="⚙️ SETTINGS" FontSize="20" FontWeight="Bold" Margin="20,20,20,30" Foreground="#FF00FF44"/>
                 
                 <Button Name="GeneralTab" Content="🏠 General" Style="{StaticResource ActiveSidebarButton}" Click="GeneralTab_Click"/>
                 <Button Name="HotkeysTab" Content="⌨️ Hotkeys" Style="{StaticResource SidebarButton}" Click="HotkeysTab_Click"/>
@@ -141,7 +235,7 @@
         </Border>
         
         <!-- Right Content Area -->
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Background="#FF0D1117">
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Background="#FF000000">
             <StackPanel Name="ContentPanel" Margin="30,20">
                 <!-- Content will be dynamically loaded here -->
             </StackPanel>

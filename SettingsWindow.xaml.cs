@@ -2,14 +2,45 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Microsoft.Win32;
 
 namespace Highlighter4
 {
     public partial class SettingsWindow : Window
     {
+        private AppSettings settings;
+        
+        // Control references for saving
+        private CheckBox startWithWindowsCheck;
+        private CheckBox showTrayIconCheck;
+        private ComboBox languageCombo;
+        private TextBox savePathText;
+        private CheckBox organizeByDateCheck;
+        
+        private CheckBox autoSaveCheck;
+        private CheckBox copyToClipboardCheck;
+        private CheckBox openInEditorCheck;
+        private CheckBox playSoundCheck;
+        private ComboBox formatCombo;
+        
+        private CheckBox autoFocusCheck;
+        private CheckBox closeAfterSaveCheck;
+        private CheckBox showGridCheck;
+        
+        private CheckBox showNotificationsCheck;
+        private CheckBox showThumbnailCheck;
+        private CheckBox clickToOpenCheck;
+        private ComboBox durationCombo;
+        
+        private CheckBox hardwareAccelCheck;
+        private CheckBox cacheImagesCheck;
+        private CheckBox enableLoggingCheck;
+        private CheckBox showConsoleCheck;
+        
         public SettingsWindow()
         {
             InitializeComponent();
+            settings = AppSettings.Instance;
             LoadGeneralSettings();
         }
 
@@ -85,7 +116,7 @@ namespace Highlighter4
                 FontSize = 24,
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(0, 0, 0, 20),
-                Foreground = new SolidColorBrush(Color.FromRgb(88, 166, 255))
+                Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 68))
             };
             ContentPanel.Children.Add(title);
 
@@ -97,19 +128,19 @@ namespace Highlighter4
             };
             var startupStack = new StackPanel();
             
-            var startWithWindows = new CheckBox
+            startWithWindowsCheck = new CheckBox
             {
                 Content = "Start with Windows",
-                IsChecked = true
+                IsChecked = settings.StartWithWindows
             };
-            startupStack.Children.Add(startWithWindows);
+            startupStack.Children.Add(startWithWindowsCheck);
             
-            var showTrayIcon = new CheckBox
+            showTrayIconCheck = new CheckBox
             {
                 Content = "Show tray icon",
-                IsChecked = true
+                IsChecked = settings.ShowTrayIcon
             };
-            startupStack.Children.Add(showTrayIcon);
+            startupStack.Children.Add(showTrayIconCheck);
             
             startupGroup.Content = startupStack;
             ContentPanel.Children.Add(startupGroup);
@@ -129,15 +160,17 @@ namespace Highlighter4
             };
             languageStack.Children.Add(langLabel);
             
-            var langCombo = new ComboBox
+            languageCombo = new ComboBox
             {
                 Width = 200,
                 HorizontalAlignment = HorizontalAlignment.Left
             };
-            langCombo.Items.Add("English");
-            langCombo.Items.Add("Español");
-            langCombo.SelectedIndex = 0;
-            languageStack.Children.Add(langCombo);
+            languageCombo.Items.Add("English");
+            languageCombo.Items.Add("Español");
+            languageCombo.SelectedItem = settings.Language;
+            if (languageCombo.SelectedItem == null)
+                languageCombo.SelectedIndex = 0;
+            languageStack.Children.Add(languageCombo);
             
             languageGroup.Content = languageStack;
             ContentPanel.Children.Add(languageGroup);
@@ -162,11 +195,11 @@ namespace Highlighter4
                 Orientation = Orientation.Horizontal
             };
             
-            var savePathText = new TextBox
+            savePathText = new TextBox
             {
-                Text = "Downloads/Highlighter4/",
+                Text = settings.SaveLocation,
                 Width = 350,
-                IsReadOnly = true,
+                IsReadOnly = false,
                 Margin = new Thickness(0, 0, 10, 0)
             };
             savePathStack.Children.Add(savePathText);
@@ -176,17 +209,18 @@ namespace Highlighter4
                 Content = "Browse...",
                 Padding = new Thickness(15, 5, 15, 5)
             };
+            browseButton.Click += BrowseButton_Click;
             savePathStack.Children.Add(browseButton);
             
             saveStack.Children.Add(savePathStack);
             
-            var organizeByDate = new CheckBox
+            organizeByDateCheck = new CheckBox
             {
                 Content = "Organize by date (dd-MM-yyyy folders)",
-                IsChecked = true,
+                IsChecked = settings.OrganizeByDate,
                 Margin = new Thickness(0, 10, 0, 0)
             };
-            saveStack.Children.Add(organizeByDate);
+            saveStack.Children.Add(organizeByDateCheck);
             
             saveGroup.Content = saveStack;
             ContentPanel.Children.Add(saveGroup);
@@ -202,9 +236,10 @@ namespace Highlighter4
             var saveButton = new Button
             {
                 Content = "💾 Save Changes",
-                Padding = new Thickness(20, 8, 20, 8)
+                Padding = new Thickness(20, 8, 20, 8),
+                Margin = new Thickness(0, 0, 10, 0)
             };
-            saveButton.Click += (s, e) => MessageBox.Show("Settings saved!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            saveButton.Click += SaveGeneralSettings_Click;
             buttonStack.Children.Add(saveButton);
             
             var cancelButton = new Button
@@ -217,6 +252,58 @@ namespace Highlighter4
             
             ContentPanel.Children.Add(buttonStack);
         }
+        
+        private void BrowseButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new System.Windows.Forms.FolderBrowserDialog
+            {
+                Description = "Select default save folder",
+                ShowNewFolderButton = true
+            };
+            
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                savePathText.Text = dialog.SelectedPath;
+            }
+        }
+        
+        private void SaveGeneralSettings_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                settings.StartWithWindows = startWithWindowsCheck.IsChecked ?? true;
+                settings.ShowTrayIcon = showTrayIconCheck.IsChecked ?? true;
+                settings.Language = languageCombo.SelectedItem?.ToString() ?? "English";
+                settings.SaveLocation = savePathText.Text;
+                settings.OrganizeByDate = organizeByDateCheck.IsChecked ?? true;
+                
+                settings.Save();
+                
+                // Update startup registry if needed
+                var mainWindow = Application.Current.MainWindow as MainWindow;
+                if (settings.StartWithWindows && mainWindow != null)
+                {
+                    // Call AddToStartup via reflection or public method
+                    var method = mainWindow.GetType().GetMethod("AddToStartup", 
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    method?.Invoke(mainWindow, null);
+                }
+                else if (!settings.StartWithWindows && mainWindow != null)
+                {
+                    var method = mainWindow.GetType().GetMethod("RemoveFromStartup", 
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    method?.Invoke(mainWindow, null);
+                }
+                
+                MessageBox.Show("General settings saved successfully!", "Success", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving settings: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
 
         private void LoadHotkeysSettings()
         {
@@ -228,14 +315,14 @@ namespace Highlighter4
                 FontSize = 24,
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(0, 0, 0, 20),
-                Foreground = new SolidColorBrush(Color.FromRgb(88, 166, 255))
+                Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 68))
             };
             ContentPanel.Children.Add(title);
 
             var description = new TextBlock
             {
                 Text = "Configure global hotkeys for quick access to features",
-                Foreground = new SolidColorBrush(Color.FromRgb(139, 148, 158)),
+                Foreground = new SolidColorBrush(Color.FromRgb(200, 200, 200)),
                 Margin = new Thickness(0, 0, 0, 20)
             };
             ContentPanel.Children.Add(description);
@@ -259,7 +346,7 @@ namespace Highlighter4
             var warningText = new TextBlock
             {
                 Text = "⚠️ Note: Hotkey customization will be available in a future update",
-                Foreground = new SolidColorBrush(Color.FromRgb(255, 184, 0)),
+                Foreground = new SolidColorBrush(Color.FromRgb(255, 200, 0)),
                 Margin = new Thickness(0, 10, 0, 0),
                 FontStyle = FontStyles.Italic
             };
@@ -305,7 +392,7 @@ namespace Highlighter4
                 FontSize = 24,
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(0, 0, 0, 20),
-                Foreground = new SolidColorBrush(Color.FromRgb(88, 166, 255))
+                Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 68))
             };
             ContentPanel.Children.Add(title);
 
@@ -317,33 +404,33 @@ namespace Highlighter4
             };
             var captureStack = new StackPanel();
             
-            var autoSave = new CheckBox
+            autoSaveCheck = new CheckBox
             {
                 Content = "Auto-save captures",
-                IsChecked = true
+                IsChecked = settings.AutoSaveCaptures
             };
-            captureStack.Children.Add(autoSave);
+            captureStack.Children.Add(autoSaveCheck);
             
-            var copyToClipboard = new CheckBox
+            copyToClipboardCheck = new CheckBox
             {
                 Content = "Copy to clipboard automatically",
-                IsChecked = true
+                IsChecked = settings.CopyToClipboard
             };
-            captureStack.Children.Add(copyToClipboard);
+            captureStack.Children.Add(copyToClipboardCheck);
             
-            var openInEditor = new CheckBox
+            openInEditorCheck = new CheckBox
             {
                 Content = "Open in editor after capture",
-                IsChecked = true
+                IsChecked = settings.OpenInEditor
             };
-            captureStack.Children.Add(openInEditor);
+            captureStack.Children.Add(openInEditorCheck);
             
-            var playSound = new CheckBox
+            playSoundCheck = new CheckBox
             {
                 Content = "Play sound on capture",
-                IsChecked = true
+                IsChecked = settings.PlaySound
             };
-            captureStack.Children.Add(playSound);
+            captureStack.Children.Add(playSoundCheck);
             
             captureGroup.Content = captureStack;
             ContentPanel.Children.Add(captureGroup);
@@ -363,7 +450,7 @@ namespace Highlighter4
             };
             formatStack.Children.Add(formatLabel);
             
-            var formatCombo = new ComboBox
+            formatCombo = new ComboBox
             {
                 Width = 200,
                 HorizontalAlignment = HorizontalAlignment.Left
@@ -371,11 +458,79 @@ namespace Highlighter4
             formatCombo.Items.Add("PNG (Recommended)");
             formatCombo.Items.Add("JPEG");
             formatCombo.Items.Add("BMP");
-            formatCombo.SelectedIndex = 0;
+            
+            // Select current format
+            string currentFormat = settings.ImageFormat.ToUpper();
+            if (currentFormat.Contains("PNG"))
+                formatCombo.SelectedIndex = 0;
+            else if (currentFormat.Contains("JPEG") || currentFormat.Contains("JPG"))
+                formatCombo.SelectedIndex = 1;
+            else if (currentFormat.Contains("BMP"))
+                formatCombo.SelectedIndex = 2;
+            else
+                formatCombo.SelectedIndex = 0;
+                
             formatStack.Children.Add(formatCombo);
             
             formatGroup.Content = formatStack;
             ContentPanel.Children.Add(formatGroup);
+            
+            // Buttons
+            var buttonStack = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 20, 0, 0)
+            };
+            
+            var saveButton = new Button
+            {
+                Content = "💾 Save Changes",
+                Padding = new Thickness(20, 8, 20, 8),
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            saveButton.Click += SaveCaptureSettings_Click;
+            buttonStack.Children.Add(saveButton);
+            
+            var cancelButton = new Button
+            {
+                Content = "❌ Cancel",
+                Padding = new Thickness(20, 8, 20, 8)
+            };
+            cancelButton.Click += (s, e) => this.Close();
+            buttonStack.Children.Add(cancelButton);
+            
+            ContentPanel.Children.Add(buttonStack);
+        }
+        
+        private void SaveCaptureSettings_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                settings.AutoSaveCaptures = autoSaveCheck.IsChecked ?? true;
+                settings.CopyToClipboard = copyToClipboardCheck.IsChecked ?? true;
+                settings.OpenInEditor = openInEditorCheck.IsChecked ?? true;
+                settings.PlaySound = playSoundCheck.IsChecked ?? true;
+                
+                // Parse format from combo
+                string selectedFormat = formatCombo.SelectedItem?.ToString() ?? "PNG (Recommended)";
+                if (selectedFormat.Contains("PNG"))
+                    settings.ImageFormat = "PNG";
+                else if (selectedFormat.Contains("JPEG"))
+                    settings.ImageFormat = "JPEG";
+                else if (selectedFormat.Contains("BMP"))
+                    settings.ImageFormat = "BMP";
+                
+                settings.Save();
+                
+                MessageBox.Show("Capture settings saved successfully!", "Success", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving settings: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void LoadEditorSettings()
@@ -388,7 +543,7 @@ namespace Highlighter4
                 FontSize = 24,
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(0, 0, 0, 20),
-                Foreground = new SolidColorBrush(Color.FromRgb(88, 166, 255))
+                Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 68))
             };
             ContentPanel.Children.Add(title);
 
@@ -402,17 +557,27 @@ namespace Highlighter4
             
             var defaultColor = new TextBlock
             {
-                Text = "Default drawing color: Red",
+                Text = $"Default drawing color: {settings.DefaultDrawingColor}",
                 Margin = new Thickness(0, 5, 0, 5)
             };
             toolsStack.Children.Add(defaultColor);
             
             var defaultThickness = new TextBlock
             {
-                Text = "Default line thickness: 3px",
+                Text = $"Default line thickness: {settings.DefaultLineThickness}px",
                 Margin = new Thickness(0, 5, 0, 5)
             };
             toolsStack.Children.Add(defaultThickness);
+            
+            var noteText = new TextBlock
+            {
+                Text = "⚠️ Note: Tool customization will be available in a future update",
+                Foreground = new SolidColorBrush(Color.FromRgb(255, 200, 0)),
+                Margin = new Thickness(0, 10, 0, 0),
+                FontStyle = FontStyles.Italic,
+                FontSize = 12
+            };
+            toolsStack.Children.Add(noteText);
             
             toolsGroup.Content = toolsStack;
             ContentPanel.Children.Add(toolsGroup);
@@ -425,29 +590,76 @@ namespace Highlighter4
             };
             var behaviorStack = new StackPanel();
             
-            var autoFocus = new CheckBox
+            autoFocusCheck = new CheckBox
             {
                 Content = "Auto-focus editor on open",
-                IsChecked = true
+                IsChecked = settings.AutoFocusEditor
             };
-            behaviorStack.Children.Add(autoFocus);
+            behaviorStack.Children.Add(autoFocusCheck);
             
-            var closeAfterSave = new CheckBox
+            closeAfterSaveCheck = new CheckBox
             {
                 Content = "Close editor after saving",
-                IsChecked = true
+                IsChecked = settings.CloseAfterSave
             };
-            behaviorStack.Children.Add(closeAfterSave);
+            behaviorStack.Children.Add(closeAfterSaveCheck);
             
-            var showGrid = new CheckBox
+            showGridCheck = new CheckBox
             {
                 Content = "Show grid in editor",
-                IsChecked = false
+                IsChecked = settings.ShowGrid
             };
-            behaviorStack.Children.Add(showGrid);
+            behaviorStack.Children.Add(showGridCheck);
             
             behaviorGroup.Content = behaviorStack;
             ContentPanel.Children.Add(behaviorGroup);
+            
+            // Buttons
+            var buttonStack = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 20, 0, 0)
+            };
+            
+            var saveButton = new Button
+            {
+                Content = "💾 Save Changes",
+                Padding = new Thickness(20, 8, 20, 8),
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            saveButton.Click += SaveEditorSettings_Click;
+            buttonStack.Children.Add(saveButton);
+            
+            var cancelButton = new Button
+            {
+                Content = "❌ Cancel",
+                Padding = new Thickness(20, 8, 20, 8)
+            };
+            cancelButton.Click += (s, e) => this.Close();
+            buttonStack.Children.Add(cancelButton);
+            
+            ContentPanel.Children.Add(buttonStack);
+        }
+        
+        private void SaveEditorSettings_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                settings.AutoFocusEditor = autoFocusCheck.IsChecked ?? true;
+                settings.CloseAfterSave = closeAfterSaveCheck.IsChecked ?? false;
+                settings.ShowGrid = showGridCheck.IsChecked ?? false;
+                
+                settings.Save();
+                
+                MessageBox.Show("Editor settings saved successfully!", "Success", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving settings: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void LoadNotificationsSettings()
@@ -460,7 +672,7 @@ namespace Highlighter4
                 FontSize = 24,
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(0, 0, 0, 20),
-                Foreground = new SolidColorBrush(Color.FromRgb(88, 166, 255))
+                Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 68))
             };
             ContentPanel.Children.Add(title);
 
@@ -472,26 +684,26 @@ namespace Highlighter4
             };
             var notifStack = new StackPanel();
             
-            var showNotifications = new CheckBox
+            showNotificationsCheck = new CheckBox
             {
                 Content = "Show notifications on save",
-                IsChecked = true
+                IsChecked = settings.ShowNotifications
             };
-            notifStack.Children.Add(showNotifications);
+            notifStack.Children.Add(showNotificationsCheck);
             
-            var showThumbnail = new CheckBox
+            showThumbnailCheck = new CheckBox
             {
                 Content = "Show image thumbnail in notification",
-                IsChecked = true
+                IsChecked = settings.ShowThumbnail
             };
-            notifStack.Children.Add(showThumbnail);
+            notifStack.Children.Add(showThumbnailCheck);
             
-            var clickToOpen = new CheckBox
+            clickToOpenCheck = new CheckBox
             {
                 Content = "Click notification to open image",
-                IsChecked = true
+                IsChecked = settings.ClickToOpen
             };
-            notifStack.Children.Add(clickToOpen);
+            notifStack.Children.Add(clickToOpenCheck);
             
             notifGroup.Content = notifStack;
             ContentPanel.Children.Add(notifGroup);
@@ -511,7 +723,7 @@ namespace Highlighter4
             };
             durationStack.Children.Add(durationLabel);
             
-            var durationCombo = new ComboBox
+            durationCombo = new ComboBox
             {
                 Width = 200,
                 HorizontalAlignment = HorizontalAlignment.Left
@@ -519,11 +731,76 @@ namespace Highlighter4
             durationCombo.Items.Add("3 seconds");
             durationCombo.Items.Add("6 seconds");
             durationCombo.Items.Add("10 seconds");
-            durationCombo.SelectedIndex = 1;
+            
+            // Select current duration
+            int duration = settings.NotificationDuration;
+            if (duration <= 3)
+                durationCombo.SelectedIndex = 0;
+            else if (duration <= 6)
+                durationCombo.SelectedIndex = 1;
+            else
+                durationCombo.SelectedIndex = 2;
+                
             durationStack.Children.Add(durationCombo);
             
             durationGroup.Content = durationStack;
             ContentPanel.Children.Add(durationGroup);
+            
+            // Buttons
+            var buttonStack = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 20, 0, 0)
+            };
+            
+            var saveButton = new Button
+            {
+                Content = "💾 Save Changes",
+                Padding = new Thickness(20, 8, 20, 8),
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            saveButton.Click += SaveNotificationsSettings_Click;
+            buttonStack.Children.Add(saveButton);
+            
+            var cancelButton = new Button
+            {
+                Content = "❌ Cancel",
+                Padding = new Thickness(20, 8, 20, 8)
+            };
+            cancelButton.Click += (s, e) => this.Close();
+            buttonStack.Children.Add(cancelButton);
+            
+            ContentPanel.Children.Add(buttonStack);
+        }
+        
+        private void SaveNotificationsSettings_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                settings.ShowNotifications = showNotificationsCheck.IsChecked ?? true;
+                settings.ShowThumbnail = showThumbnailCheck.IsChecked ?? true;
+                settings.ClickToOpen = clickToOpenCheck.IsChecked ?? true;
+                
+                // Parse duration from combo
+                string selectedDuration = durationCombo.SelectedItem?.ToString() ?? "6 seconds";
+                if (selectedDuration.Contains("3"))
+                    settings.NotificationDuration = 3;
+                else if (selectedDuration.Contains("6"))
+                    settings.NotificationDuration = 6;
+                else if (selectedDuration.Contains("10"))
+                    settings.NotificationDuration = 10;
+                
+                settings.Save();
+                
+                MessageBox.Show("Notification settings saved successfully!", "Success", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving settings: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void LoadAdvancedSettings()
@@ -536,14 +813,14 @@ namespace Highlighter4
                 FontSize = 24,
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(0, 0, 0, 20),
-                Foreground = new SolidColorBrush(Color.FromRgb(88, 166, 255))
+                Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 68))
             };
             ContentPanel.Children.Add(title);
 
             var warningText = new TextBlock
             {
                 Text = "⚠️ Warning: Changing these settings may affect application performance",
-                Foreground = new SolidColorBrush(Color.FromRgb(255, 100, 100)),
+                Foreground = new SolidColorBrush(Color.FromRgb(255, 80, 80)),
                 Margin = new Thickness(0, 0, 0, 20),
                 FontWeight = FontWeights.Bold
             };
@@ -557,19 +834,19 @@ namespace Highlighter4
             };
             var perfStack = new StackPanel();
             
-            var hardwareAccel = new CheckBox
+            hardwareAccelCheck = new CheckBox
             {
                 Content = "Enable hardware acceleration",
-                IsChecked = true
+                IsChecked = settings.HardwareAcceleration
             };
-            perfStack.Children.Add(hardwareAccel);
+            perfStack.Children.Add(hardwareAccelCheck);
             
-            var cacheImages = new CheckBox
+            cacheImagesCheck = new CheckBox
             {
                 Content = "Cache recent images",
-                IsChecked = true
+                IsChecked = settings.CacheImages
             };
-            perfStack.Children.Add(cacheImages);
+            perfStack.Children.Add(cacheImagesCheck);
             
             perfGroup.Content = perfStack;
             ContentPanel.Children.Add(perfGroup);
@@ -582,42 +859,326 @@ namespace Highlighter4
             };
             var debugStack = new StackPanel();
             
-            var enableLogging = new CheckBox
+            enableLoggingCheck = new CheckBox
             {
                 Content = "Enable debug logging",
-                IsChecked = false
+                IsChecked = settings.EnableLogging
             };
-            debugStack.Children.Add(enableLogging);
+            debugStack.Children.Add(enableLoggingCheck);
             
-            var showConsole = new CheckBox
+            showConsoleCheck = new CheckBox
             {
                 Content = "Show debug console",
-                IsChecked = false
+                IsChecked = settings.ShowConsole
             };
-            debugStack.Children.Add(showConsole);
+            debugStack.Children.Add(showConsoleCheck);
             
             debugGroup.Content = debugStack;
             ContentPanel.Children.Add(debugGroup);
+            
+            // FFmpeg Installation
+            var ffmpegGroup = new GroupBox
+            {
+                Header = "FFmpeg",
+                Margin = new Thickness(0, 0, 0, 15)
+            };
+            var ffmpegStack = new StackPanel();
+            
+            // Check FFmpeg status
+            bool isInstalled = FFmpegManager.IsFFmpegInstalled();
+            
+            var ffmpegStatusText = new TextBlock
+            {
+                Text = isInstalled ? "✅ FFmpeg is installed" : "❌ FFmpeg is not installed",
+                Foreground = new SolidColorBrush(isInstalled ? Color.FromRgb(0, 255, 68) : Color.FromRgb(255, 80, 80)),
+                Margin = new Thickness(0, 5, 0, 10),
+                FontWeight = FontWeights.Bold
+            };
+            ffmpegStack.Children.Add(ffmpegStatusText);
+            
+            var ffmpegInfoText = new TextBlock
+            {
+                Text = "FFmpeg is required for advanced video capture and recording features.",
+                Foreground = new SolidColorBrush(Color.FromRgb(200, 200, 200)),
+                Margin = new Thickness(0, 0, 0, 10),
+                TextWrapping = TextWrapping.Wrap
+            };
+            ffmpegStack.Children.Add(ffmpegInfoText);
+            
+            var ffmpegButtonStack = new StackPanel
+            {
+                Orientation = Orientation.Horizontal
+            };
+            
+            var installFFmpegButton = new Button
+            {
+                Content = isInstalled ? "🔄 Reinstall FFmpeg" : "📥 Install FFmpeg",
+                Padding = new Thickness(15, 5, 15, 5),
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            installFFmpegButton.Click += InstallFFmpeg_Click;
+            ffmpegButtonStack.Children.Add(installFFmpegButton);
+            
+            var verifyFFmpegButton = new Button
+            {
+                Content = "🔍 Verify Installation",
+                Padding = new Thickness(15, 5, 15, 5)
+            };
+            verifyFFmpegButton.Click += VerifyFFmpeg_Click;
+            ffmpegButtonStack.Children.Add(verifyFFmpegButton);
+            
+            ffmpegStack.Children.Add(ffmpegButtonStack);
+            
+            ffmpegGroup.Content = ffmpegStack;
+            ContentPanel.Children.Add(ffmpegGroup);
+            
+            // Buttons
+            var buttonStack = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 20, 0, 0)
+            };
+            
+            var saveButton = new Button
+            {
+                Content = "💾 Save Changes",
+                Padding = new Thickness(20, 8, 20, 8),
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            saveButton.Click += SaveAdvancedSettings_Click;
+            buttonStack.Children.Add(saveButton);
+            
+            var cancelButton = new Button
+            {
+                Content = "❌ Cancel",
+                Padding = new Thickness(20, 8, 20, 8)
+            };
+            cancelButton.Click += (s, e) => this.Close();
+            buttonStack.Children.Add(cancelButton);
+            
+            ContentPanel.Children.Add(buttonStack);
 
             // Reset Button
             var resetButton = new Button
             {
                 Content = "🔄 Reset All Settings to Default",
                 Padding = new Thickness(20, 8, 20, 8),
-                Margin = new Thickness(0, 20, 0, 0),
+                Margin = new Thickness(20, 0, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Background = new SolidColorBrush(Color.FromRgb(139, 0, 0))
+                Background = new SolidColorBrush(Color.FromRgb(180, 0, 0))
             };
-            resetButton.Click += (s, e) =>
-            {
-                var result = MessageBox.Show("Are you sure you want to reset all settings to default?", 
-                    "Reset Settings", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                if (result == MessageBoxResult.Yes)
-                {
-                    MessageBox.Show("Settings reset to default!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            };
+            resetButton.Click += ResetSettings_Click;
             ContentPanel.Children.Add(resetButton);
+        }
+        
+        private async void InstallFFmpeg_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var button = sender as Button;
+                if (button != null)
+                {
+                    button.IsEnabled = false;
+                    button.Content = "⏳ Installing...";
+                }
+                
+                // Force installation even if already installed
+                await System.Threading.Tasks.Task.Run(async () =>
+                {
+                    bool isInstalled = FFmpegManager.IsFFmpegInstalled();
+                    
+                    if (isInstalled)
+                    {
+                        // Ask if user wants to reinstall
+                        bool shouldReinstall = false;
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            var result = MessageBox.Show(
+                                "FFmpeg is already installed.\n\nDo you want to reinstall it?",
+                                "FFmpeg Already Installed",
+                                MessageBoxButton.YesNo,
+                                MessageBoxImage.Question);
+                            shouldReinstall = (result == MessageBoxResult.Yes);
+                        });
+                        
+                        if (!shouldReinstall)
+                        {
+                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
+                                if (button != null)
+                                {
+                                    button.IsEnabled = true;
+                                    button.Content = "🔄 Reinstall FFmpeg";
+                                }
+                            });
+                            return;
+                        }
+                    }
+                    
+                    // Proceed with installation
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        MessageBox.Show(
+                            "Attempting to install FFmpeg...\n\n" +
+                            "This may take a few minutes. Please wait.",
+                            "Installing FFmpeg",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                    });
+                    
+                    // Try installation methods
+                    bool installed = false;
+                    
+                    // Try winget first
+                    System.Diagnostics.Debug.WriteLine("Attempting FFmpeg installation with winget...");
+                    installed = await FFmpegManager.TryInstallWithWingetAsync();
+                    
+                    if (!installed)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Winget failed, trying chocolatey...");
+                        installed = await FFmpegManager.TryInstallWithChocoAsync();
+                    }
+                    
+                    if (!installed)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Chocolatey failed, trying scoop...");
+                        installed = await FFmpegManager.TryInstallWithScoopAsync();
+                    }
+                    
+                    // Show result
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        if (installed)
+                        {
+                            MessageBox.Show(
+                                "FFmpeg has been installed successfully!\n\n" +
+                                "You may need to restart the application for changes to take effect.",
+                                "Installation Successful",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Information);
+                            
+                            // Reload the settings panel to update status
+                            LoadAdvancedSettings();
+                        }
+                        else
+                        {
+                            var result = MessageBox.Show(
+                                "Automatic installation failed.\n\n" +
+                                "Would you like to open the FFmpeg download page for manual installation?",
+                                "Manual Installation Required",
+                                MessageBoxButton.YesNo,
+                                MessageBoxImage.Warning);
+                                
+                            if (result == MessageBoxResult.Yes)
+                            {
+                                try
+                                {
+                                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                                    {
+                                        FileName = "https://ffmpeg.org/download.html",
+                                        UseShellExecute = true
+                                    });
+                                }
+                                catch (Exception ex)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"Error opening browser: {ex.Message}");
+                                }
+                            }
+                            
+                            if (button != null)
+                            {
+                                button.IsEnabled = true;
+                                button.Content = "📥 Install FFmpeg";
+                            }
+                        }
+                    });
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error installing FFmpeg: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                
+                var button = sender as Button;
+                if (button != null)
+                {
+                    button.IsEnabled = true;
+                    button.Content = "📥 Install FFmpeg";
+                }
+            }
+        }
+        
+        private void VerifyFFmpeg_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                bool isInstalled = FFmpegManager.IsFFmpegInstalled();
+                
+                if (isInstalled)
+                {
+                    MessageBox.Show(
+                        "✅ FFmpeg is installed and working correctly!\n\n" +
+                        "FFmpeg is available in your system PATH and ready to use.",
+                        "FFmpeg Verified",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show(
+                        "❌ FFmpeg is not installed or not found in PATH.\n\n" +
+                        "Please install FFmpeg to use advanced video features.",
+                        "FFmpeg Not Found",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
+                
+                // Reload the settings panel to update status
+                LoadAdvancedSettings();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error verifying FFmpeg: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private void SaveAdvancedSettings_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                settings.HardwareAcceleration = hardwareAccelCheck.IsChecked ?? true;
+                settings.CacheImages = cacheImagesCheck.IsChecked ?? true;
+                settings.EnableLogging = enableLoggingCheck.IsChecked ?? false;
+                settings.ShowConsole = showConsoleCheck.IsChecked ?? false;
+                
+                settings.Save();
+                
+                MessageBox.Show("Advanced settings saved successfully!", "Success", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving settings: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private void ResetSettings_Click(object sender, RoutedEventArgs e)
+        {
+            var result = MessageBox.Show("Are you sure you want to reset all settings to default?\n\nThis action cannot be undone.", 
+                "Reset Settings", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            
+            if (result == MessageBoxResult.Yes)
+            {
+                settings.ResetToDefault();
+                MessageBox.Show("Settings reset to default!\n\nPlease restart the application for all changes to take effect.", 
+                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                
+                // Reload current tab to show updated values
+                LoadAdvancedSettings();
+            }
         }
 
         private void LoadAboutInfo()
@@ -630,7 +1191,7 @@ namespace Highlighter4
                 FontSize = 24,
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(0, 0, 0, 20),
-                Foreground = new SolidColorBrush(Color.FromRgb(88, 166, 255))
+                Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 68))
             };
             ContentPanel.Children.Add(title);
 

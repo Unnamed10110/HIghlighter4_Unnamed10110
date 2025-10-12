@@ -44,6 +44,7 @@ namespace Highlighter4
         private IntPtr selectedWindow;
         private int bestMatchCount, bestMatchIndex, bestIgnoreBottomOffset;
         private string cacheDirectory;
+        private ScrollCaptureOverlay captureOverlay;
         #endregion
 
         #region Constructor
@@ -137,6 +138,9 @@ namespace Highlighter4
         #region Captura Principal
         private async Task PerformCapture()
         {
+            // Show capture overlay
+            ShowCaptureOverlay();
+            
             using (var screenshot = new Screenshot())
             {
                 while (!stopRequested)
@@ -184,6 +188,9 @@ namespace Highlighter4
                 }
             }
 
+            // Hide capture overlay
+            HideCaptureOverlay();
+            
             // Guardar resultado
             if (Result != null)
             {
@@ -558,8 +565,129 @@ namespace Highlighter4
         {
             Reset();
         }
+        
+        private void ShowCaptureOverlay()
+        {
+            try
+            {
+                // Create and show overlay on UI thread
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    captureOverlay = new ScrollCaptureOverlay(selectedRectangle);
+                    captureOverlay.Show();
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error showing capture overlay: {ex.Message}");
+            }
+        }
+        
+        private void HideCaptureOverlay()
+        {
+            try
+            {
+                // Hide overlay on UI thread
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    captureOverlay?.Close();
+                    captureOverlay = null;
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error hiding capture overlay: {ex.Message}");
+            }
+        }
         #endregion
     }
+    
+    #region ScrollCaptureOverlay
+    
+    /// <summary>
+    /// Overlay window that shows the capture region border during scroll capture
+    /// </summary>
+    public class ScrollCaptureOverlay : System.Windows.Window
+    {
+        private System.Windows.Shapes.Rectangle borderRectangle;
+        private System.Windows.Threading.DispatcherTimer animationTimer;
+        private double dashOffset = 0;
+        
+        public ScrollCaptureOverlay(System.Drawing.Rectangle captureRect)
+        {
+            InitializeOverlay(captureRect);
+        }
+        
+        private void InitializeOverlay(System.Drawing.Rectangle captureRect)
+        {
+            // Window configuration
+            this.WindowStyle = System.Windows.WindowStyle.None;
+            this.AllowsTransparency = true;
+            this.Background = System.Windows.Media.Brushes.Transparent;
+            this.Topmost = true;
+            this.ShowInTaskbar = false;
+            this.ResizeMode = System.Windows.ResizeMode.NoResize;
+            this.WindowState = System.Windows.WindowState.Maximized;
+            this.Left = 0;
+            this.Top = 0;
+            this.Width = System.Windows.SystemParameters.PrimaryScreenWidth;
+            this.Height = System.Windows.SystemParameters.PrimaryScreenHeight;
+            
+            // Create canvas
+            var canvas = new System.Windows.Controls.Canvas
+            {
+                Background = System.Windows.Media.Brushes.Transparent,
+                IsHitTestVisible = false
+            };
+            
+            // Create animated border rectangle
+            borderRectangle = new System.Windows.Shapes.Rectangle
+            {
+                Width = captureRect.Width,
+                Height = captureRect.Height,
+                Stroke = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 68)), // Green #00ff44
+                StrokeThickness = 1,
+                StrokeDashArray = new System.Windows.Media.DoubleCollection { 8, 4 }, // Dashed line
+                Fill = System.Windows.Media.Brushes.Transparent,
+                IsHitTestVisible = false
+            };
+            
+            System.Windows.Controls.Canvas.SetLeft(borderRectangle, captureRect.X);
+            System.Windows.Controls.Canvas.SetTop(borderRectangle, captureRect.Y);
+            canvas.Children.Add(borderRectangle);
+            
+            this.Content = canvas;
+            
+            // Start animation
+            StartBorderAnimation();
+        }
+        
+        private void StartBorderAnimation()
+        {
+            animationTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(50)
+            };
+            
+            animationTimer.Tick += (s, e) =>
+            {
+                dashOffset += 1;
+                if (dashOffset >= 12) dashOffset = 0; // Reset at dash pattern length
+                borderRectangle.StrokeDashOffset = dashOffset;
+            };
+            
+            animationTimer.Start();
+        }
+        
+        protected override void OnClosed(EventArgs e)
+        {
+            animationTimer?.Stop();
+            animationTimer = null;
+            base.OnClosed(e);
+        }
+    }
+    
+    #endregion
 
     #region Clases Auxiliares
 
