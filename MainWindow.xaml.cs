@@ -87,7 +87,7 @@ namespace Highlighter4
                     uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP,
                     uCallbackMessage = WM_TRAYICON,
                     hIcon = customIcon.Handle,
-                    szTip = "Highlighter4 - Alt+X=Highlight, C=Capture, Ctrl+NumpadDot=Quick Capture\0"
+                    szTip = "Highlighter4 - Alt+X=Highlight, Ctrl+NumpadDot=GIF Recording\0"
                 };
                 
                 System.Diagnostics.Debug.WriteLine($"About to call Shell_NotifyIcon with flags: {iconData.uFlags}");
