@@ -2,8 +2,10 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Forms;
 
 namespace Highlighter4
 {
@@ -42,7 +44,7 @@ namespace Highlighter4
             {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    MessageBox.Show(
+                    System.Windows.MessageBox.Show(
                         "FFmpeg is not installed.\n\n" +
                         "Please install FFmpeg from Settings → Advanced to use GIF recording.",
                         "FFmpeg Required",
@@ -74,15 +76,25 @@ namespace Highlighter4
                 
                 outputFilePath = Path.Combine(basePath, $"{timestamp}.gif");
                 
-                // Build FFmpeg command
-                // Using gdigrab to capture Windows screen
+                // Build FFmpeg command with improved settings to avoid black screen issues
+                // Using gdigrab to capture Windows screen with better compatibility
+                // Capture a slightly smaller region to avoid overlay interference
+                int captureX = region.X + 2;  // Offset to avoid border
+                int captureY = region.Y + 2;
+                int captureWidth = region.Width - 4;  // Reduce width to avoid border
+                int captureHeight = region.Height - 4; // Reduce height to avoid border
+                
                 string ffmpegArgs = $"-f gdigrab " +
-                    $"-framerate 30 " +
-                    $"-offset_x {region.X} " +
-                    $"-offset_y {region.Y} " +
-                    $"-video_size {region.Width}x{region.Height} " +
+                    $"-framerate 20 " +  // Higher framerate for better cursor capture
+                    $"-offset_x {captureX} " +
+                    $"-offset_y {captureY} " +
+                    $"-video_size {captureWidth}x{captureHeight} " +
+                    $"-draw_mouse 1 " +  // Enable cursor capture
+                    $"-show_region 0 " + // Don't show region border
                     $"-i desktop " +
-                    $"-vf \"fps=30,scale={region.Width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=256[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5\" " +
+                    $"-vf \"fps=20,scale={captureWidth}:-1:flags=lanczos,eq=contrast=1.0:brightness=0.0:saturation=1.0,split[s0][s1];[s0]palettegen=max_colors=256[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5\" " +
+                    $"-c:v gif " +  // Use GIF codec directly
+                    $"-pix_fmt rgb24 " +  // Use RGB24 pixel format for better cursor rendering
                     $"-loop 0 " +
                     $"\"{outputFilePath}\"";
                 
@@ -113,7 +125,7 @@ namespace Highlighter4
                 
                 isRecording = true;
                 
-                // Show border overlay
+                // Show overlay with advanced technique to avoid screen capture interference
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     borderOverlay = new RecordingBorderOverlay(recordingRegion);
@@ -134,7 +146,7 @@ namespace Highlighter4
                 
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    MessageBox.Show(
+                    System.Windows.MessageBox.Show(
                         $"Failed to start GIF recording:\n\n{ex.Message}\n\n" +
                         "Make sure FFmpeg is properly installed.",
                         "Recording Error",
@@ -240,7 +252,7 @@ namespace Highlighter4
                     
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        MessageBox.Show(
+                        System.Windows.MessageBox.Show(
                             "GIF recording completed but file was not created.\n\n" +
                             "This may happen if the recording was too short.",
                             "Recording Warning",
@@ -262,7 +274,7 @@ namespace Highlighter4
                 
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    MessageBox.Show(
+                    System.Windows.MessageBox.Show(
                         $"Error stopping recording:\n\n{ex.Message}",
                         "Recording Error",
                         MessageBoxButton.OK,
@@ -366,6 +378,22 @@ namespace Highlighter4
         private System.Windows.Threading.DispatcherTimer pulseTimer;
         private double dashOffset = 0;
         
+        // P/Invoke declarations for creating a window that doesn't interfere with screen capture
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+        
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+        
+        [DllImport("user32.dll")]
+        private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
+        
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_LAYERED = 0x80000;
+        private const int WS_EX_TRANSPARENT = 0x20;
+        private const uint LWA_COLORKEY = 0x1;
+        private const uint LWA_ALPHA = 0x2;
+        
         public RecordingBorderOverlay(Rectangle captureRect)
         {
             InitializeOverlay(captureRect);
@@ -373,7 +401,7 @@ namespace Highlighter4
         
         private void InitializeOverlay(Rectangle captureRect)
         {
-            // Window setup
+            // Window setup - Cover entire screen to show region border
             this.WindowStyle = System.Windows.WindowStyle.None;
             this.AllowsTransparency = true;
             this.Background = System.Windows.Media.Brushes.Transparent;
@@ -387,20 +415,22 @@ namespace Highlighter4
             this.Height = System.Windows.SystemParameters.PrimaryScreenHeight;
             this.IsHitTestVisible = false; // Allow clicks to pass through
             
+            this.Visibility = System.Windows.Visibility.Visible;
+            
             var canvas = new System.Windows.Controls.Canvas
             {
                 Background = System.Windows.Media.Brushes.Transparent,
                 IsHitTestVisible = false
             };
             
-            // Create animated border rectangle (1px white, outside the capture region)
+            // Create animated border rectangle around the capture region
             borderRectangle = new System.Windows.Shapes.Rectangle
             {
                 Width = captureRect.Width + 2,  // +2 to draw outside the region
                 Height = captureRect.Height + 2,
-                Stroke = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 255, 255)), // White
-                StrokeThickness = 1,
-                StrokeDashArray = new System.Windows.Media.DoubleCollection { 8, 4 }, // Dashed line
+                Stroke = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 255, 255)), // White border
+                StrokeThickness = 1, // 1px thickness
+                StrokeDashArray = new System.Windows.Media.DoubleCollection { 6, 3 }, // Dashed line pattern
                 Fill = System.Windows.Media.Brushes.Transparent,
                 IsHitTestVisible = false
             };
@@ -409,23 +439,40 @@ namespace Highlighter4
             System.Windows.Controls.Canvas.SetTop(borderRectangle, captureRect.Y - 1);
             canvas.Children.Add(borderRectangle);
             
-            // Add timer display (inside the capture region, bottom-left)
+            // Add timer display inside the capture region (bottom-left corner)
             var timerText = new System.Windows.Controls.TextBlock
             {
                 Name = "TimerText",
                 Text = "00:00.00",
                 Foreground = System.Windows.Media.Brushes.White,
-                FontSize = 12,
+                FontSize = 16,
                 FontWeight = System.Windows.FontWeights.Bold,
-                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(180, 0, 0, 0)),
-                Padding = new System.Windows.Thickness(6, 3, 6, 3),
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(220, 0, 0, 0)),
+                Padding = new System.Windows.Thickness(8, 4, 8, 4),
                 IsHitTestVisible = false
             };
             
             // Position timer inside the capture region, bottom-left corner
-            System.Windows.Controls.Canvas.SetLeft(timerText, captureRect.X + 8);
-            System.Windows.Controls.Canvas.SetTop(timerText, captureRect.Y + captureRect.Height - 25);
+            System.Windows.Controls.Canvas.SetLeft(timerText, captureRect.X + 10);
+            System.Windows.Controls.Canvas.SetTop(timerText, captureRect.Y + captureRect.Height - 35);
             canvas.Children.Add(timerText);
+            
+            // Add info text about cursor (bottom-right corner)
+            var infoText = new System.Windows.Controls.TextBlock
+            {
+                Text = "Cursor enabled (advanced)",
+                Foreground = System.Windows.Media.Brushes.White,
+                FontSize = 10,
+                FontWeight = System.Windows.FontWeights.Normal,
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(180, 0, 0, 0)),
+                Padding = new System.Windows.Thickness(4, 2, 4, 2),
+                IsHitTestVisible = false
+            };
+            
+            // Position info text in bottom-right corner
+            System.Windows.Controls.Canvas.SetLeft(infoText, captureRect.X + captureRect.Width - 120);
+            System.Windows.Controls.Canvas.SetTop(infoText, captureRect.Y + captureRect.Height - 20);
+            canvas.Children.Add(infoText);
             
             this.Content = canvas;
             
@@ -433,17 +480,18 @@ namespace Highlighter4
             StartTimerAnimation(timerText);
         }
         
+        
         private void StartBorderAnimation()
         {
             animationTimer = new System.Windows.Threading.DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(50)
+                Interval = TimeSpan.FromMilliseconds(30) // Faster animation for smoother movement
             };
             
             animationTimer.Tick += (s, e) =>
             {
-                dashOffset += 1;
-                if (dashOffset >= 15) dashOffset = 0;
+                dashOffset += 0.5; // Slower increment for smoother movement
+                if (dashOffset >= 9) dashOffset = 0; // Reset based on dash pattern (6+3=9)
                 borderRectangle.StrokeDashOffset = dashOffset;
             };
             

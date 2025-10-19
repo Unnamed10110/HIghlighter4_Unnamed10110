@@ -315,6 +315,76 @@ namespace Highlighter4
             
             contextMenu.Items.Add(new System.Windows.Controls.Separator());
             
+            // Drawing Tools
+            var drawingToolsItem = new System.Windows.Controls.MenuItem();
+            drawingToolsItem.Header = "🎨 Drawing Tools";
+            contextMenu.Items.Add(drawingToolsItem);
+            
+            // Arrow Tool
+            var arrowToolItem = new System.Windows.Controls.MenuItem();
+            arrowToolItem.Header = "▶ Arrow Tool (F1)";
+            arrowToolItem.ToolTip = "Select and move elements";
+            arrowToolItem.Click += (s, e) => {
+                // TODO: Implement arrow tool functionality
+            };
+            drawingToolsItem.Items.Add(arrowToolItem);
+            
+            // Line Tool
+            var lineToolItem = new System.Windows.Controls.MenuItem();
+            lineToolItem.Header = "➖ Line Tool (F2)";
+            lineToolItem.ToolTip = "Draw straight lines";
+            lineToolItem.Click += (s, e) => {
+                // TODO: Implement line tool functionality
+            };
+            drawingToolsItem.Items.Add(lineToolItem);
+            
+            // Rectangle Tool
+            var rectangleToolItem = new System.Windows.Controls.MenuItem();
+            rectangleToolItem.Header = "⬜ Rectangle Tool (F3)";
+            rectangleToolItem.ToolTip = "Draw rectangles and squares";
+            rectangleToolItem.Click += (s, e) => {
+                // TODO: Implement rectangle tool functionality
+            };
+            drawingToolsItem.Items.Add(rectangleToolItem);
+            
+            // Highlighter Tool
+            var highlighterToolItem = new System.Windows.Controls.MenuItem();
+            highlighterToolItem.Header = "🖍 Highlighter Tool (F4)";
+            highlighterToolItem.ToolTip = "Highlight text and areas";
+            highlighterToolItem.Click += (s, e) => {
+                // TODO: Implement highlighter tool functionality
+            };
+            drawingToolsItem.Items.Add(highlighterToolItem);
+            
+            // Blur Tool
+            var blurToolItem = new System.Windows.Controls.MenuItem();
+            blurToolItem.Header = "🌫 Blur Tool (F5)";
+            blurToolItem.ToolTip = "Blur sensitive information";
+            blurToolItem.Click += (s, e) => {
+                // TODO: Implement blur tool functionality
+            };
+            drawingToolsItem.Items.Add(blurToolItem);
+            
+            // Speech Balloon Tool
+            var speechBalloonToolItem = new System.Windows.Controls.MenuItem();
+            speechBalloonToolItem.Header = "💬 Speech Balloon Tool (F6)";
+            speechBalloonToolItem.ToolTip = "Add speech bubbles and annotations";
+            speechBalloonToolItem.Click += (s, e) => {
+                // TODO: Implement speech balloon tool functionality
+            };
+            drawingToolsItem.Items.Add(speechBalloonToolItem);
+            
+            // Crop Tool
+            var cropToolItem = new System.Windows.Controls.MenuItem();
+            cropToolItem.Header = "✂️ Crop Tool (F7)";
+            cropToolItem.ToolTip = "Crop and resize images";
+            cropToolItem.Click += (s, e) => {
+                // TODO: Implement crop tool functionality
+            };
+            drawingToolsItem.Items.Add(cropToolItem);
+            
+            contextMenu.Items.Add(new System.Windows.Controls.Separator());
+            
             // Settings
             var settingsItem = new System.Windows.Controls.MenuItem();
             settingsItem.Header = "⚙️ Settings";
