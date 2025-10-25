@@ -2223,4 +2223,95 @@ namespace Highlighter4
     }
     
     #endregion
+    
+    #region SpeechBalloon Class
+    
+    public class SpeechBalloon
+    {
+        public Shape BalloonShape { get; private set; }
+        public TextBlock TextBlock { get; private set; }
+        public Rectangle? DragArea { get; set; }
+        public Ellipse? TailTip { get; set; }
+        public Path? TailPath { get; private set; }
+        public double BalloonWidth { get; private set; }
+        public double BalloonHeight { get; private set; }
+        public string Text { get; set; }
+        
+        public SpeechBalloon(string text, Point position)
+        {
+            Text = text;
+            
+            // Calcular dimensiones basadas en el texto
+            BalloonWidth = Math.Max(150, text.Length * 8);
+            BalloonHeight = Math.Max(60, (text.Split('\n').Length * 25) + 20);
+            
+            // Crear forma del globo (elipse redondeada)
+            BalloonShape = new Rectangle
+            {
+                Width = BalloonWidth,
+                Height = BalloonHeight,
+                Fill = System.Windows.Media.Brushes.White,
+                Stroke = System.Windows.Media.Brushes.Black,
+                StrokeThickness = 2,
+                RadiusX = 15,
+                RadiusY = 15
+            };
+            
+            Canvas.SetLeft(BalloonShape, position.X);
+            Canvas.SetTop(BalloonShape, position.Y);
+            
+            // Crear texto
+            TextBlock = new TextBlock
+            {
+                Text = text,
+                Foreground = System.Windows.Media.Brushes.Black,
+                FontSize = 14,
+                FontWeight = FontWeights.Normal,
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = BalloonWidth - 20,
+                TextAlignment = TextAlignment.Left,
+                Padding = new Thickness(5)
+            };
+            
+            Canvas.SetLeft(TextBlock, position.X + 10);
+            Canvas.SetTop(TextBlock, position.Y + 10);
+            
+            Panel.SetZIndex(BalloonShape, 1000);
+            Panel.SetZIndex(TextBlock, 1001);
+        }
+        
+        public void UpdateTail(Point startPoint, Point endPoint)
+        {
+            // Crear o actualizar el path de la cola
+            if (TailPath == null)
+            {
+                TailPath = new Path
+                {
+                    Stroke = System.Windows.Media.Brushes.Black,
+                    StrokeThickness = 2,
+                    Fill = System.Windows.Media.Brushes.White
+                };
+            }
+            
+            // Crear geometría de la cola (triángulo)
+            var geometry = new PathGeometry();
+            var figure = new PathFigure
+            {
+                StartPoint = startPoint
+            };
+            
+            figure.Segments.Add(new LineSegment(endPoint, true));
+            figure.Segments.Add(new LineSegment(
+                new Point(endPoint.X - 15, endPoint.Y), true));
+            figure.Segments.Add(new LineSegment(startPoint, true));
+            
+            figure.IsClosed = true;
+            geometry.Figures.Add(figure);
+            
+            TailPath.Data = geometry;
+            Panel.SetZIndex(TailPath, 999);
+        }
+    }
+    
+    #endregion
 }
