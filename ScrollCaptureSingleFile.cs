@@ -912,7 +912,7 @@ namespace Highlighter4
             else
             {
                 // Mostrar instrucciones cuando no se está seleccionando
-                string instructions = "Arrastra para seleccionar región | ESC para cancelar | Enter para confirmar";
+                string instructions = "Drag to select region | ESC to cancel | Enter to confirm";
                 using (var font = new Font("Arial", 14, System.Drawing.FontStyle.Bold))
                 using (var brush = new SolidBrush(Color.Yellow))
                 using (var outlineBrush = new SolidBrush(Color.Black))

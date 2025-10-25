@@ -1290,7 +1290,7 @@ namespace Highlighter4
                 
                 var cropButton = new Button
                 {
-                    Content = "✓ Recortar",
+                    Content = "✓ Crop",
                     Margin = new Thickness(5),
                     Padding = new Thickness(10, 5, 10, 5),
                     Background = new SolidColorBrush(Colors.Green),
@@ -1300,7 +1300,7 @@ namespace Highlighter4
                 
                 var cancelButton = new Button
                 {
-                    Content = "✗ Cancelar",
+                    Content = "✗ Cancel",
                     Margin = new Thickness(5),
                     Padding = new Thickness(10, 5, 10, 5),
                     Background = new SolidColorBrush(Colors.Red),
@@ -1718,7 +1718,7 @@ namespace Highlighter4
         private void CreateSpeechBalloon(Point position)
         {
             // Crear un diálogo de entrada de texto
-            var inputDialog = new TextInputDialog("Ingresa el texto para el globo:");
+            var inputDialog = new TextInputDialog("Enter text for the balloon:");
             inputDialog.Owner = this;
             
             if (inputDialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(inputDialog.Text))
@@ -2131,7 +2131,7 @@ namespace Highlighter4
         
         public TextInputDialog(string prompt)
         {
-            Title = "Texto del Globo";
+            Title = "Speech Balloon Text";
             Width = 450;
             Height = 250;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -2144,7 +2144,7 @@ namespace Highlighter4
             
             var label = new Label
             {
-                Content = prompt + "\n(Presiona Enter para nueva línea, Ctrl+Enter para crear)",
+                Content = prompt + "\n(Press Enter for new line, Ctrl+Enter to create)",
                 Margin = new Thickness(10),
                 Foreground = new SolidColorBrush(Colors.White),
                 FontSize = 12
@@ -2176,7 +2176,7 @@ namespace Highlighter4
             
             var okButton = new Button
             {
-                Content = "Crear (Ctrl+Enter)",
+                Content = "Create (Ctrl+Enter)",
                 Width = 120,
                 Margin = new Thickness(5, 0, 0, 0),
                 Background = new SolidColorBrush(Color.FromArgb(255, 31, 111, 235)),
@@ -2186,7 +2186,7 @@ namespace Highlighter4
             
             var cancelButton = new Button
             {
-                Content = "Cancelar (Escape)",
+                Content = "Cancel (Escape)",
                 Width = 120,
                 Margin = new Thickness(5, 0, 0, 0),
                 Background = new SolidColorBrush(Color.FromArgb(255, 33, 38, 45)),
